@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -41,10 +41,10 @@ canvas.addEventListener('touchmove',e=>{
 canvas.addEventListener('touchend',e=>{if(e.touches.length===0){if(!multiTouch&&!gestureMoved&&lastTouch&&sceneGesture){sendGesture('tap',lastTouch.x,lastTouch.y);gestureState.taps++;}lastTouch=null;previousDistance=0;}e.preventDefault();},{passive:false});
 canvas.addEventListener('touchcancel',()=>{lastTouch=null;previousDistance=0;multiTouch=true;});
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
-const buildUrl='Build';
-const config={dataUrl:buildUrl+'/WebGL.data.unityweb',frameworkUrl:buildUrl+'/WebGL.framework.js.unityweb',codeUrl:buildUrl+'/WebGL.wasm.unityweb',streamingAssetsUrl:'StreamingAssets',companyName:'FindGuys',productName:'Petit Jardin',productVersion:'0.1.0',showBanner:(message,type)=>{if(type==='error')showError(message)},devicePixelRatio:Math.min(window.devicePixelRatio||1,1.75)};
+const buildUrl='Build'; const assetVersion='?v=mobile-20261019-2';
+const config={dataUrl:buildUrl+'/WebGL.data.unityweb'+assetVersion,frameworkUrl:buildUrl+'/WebGL.framework.js.unityweb'+assetVersion,codeUrl:buildUrl+'/WebGL.wasm.unityweb'+assetVersion,cacheControl:()=> 'no-store',streamingAssetsUrl:'StreamingAssets',companyName:'FindGuys',productName:'Petit Jardin',productVersion:'0.1.1',showBanner:(message,type)=>{if(type==='error')showError(message)},devicePixelRatio:Math.min(window.devicePixelRatio||1,1.75)};
 function showError(message){document.getElementById('loading').style.display='flex';let e=document.getElementById('error');e.style.display='block';e.textContent='小院载入遇到了问题。请使用本地服务器打开，并检查浏览器是否启用 WebGL 2。\n'+message;console.error(message)}
-let loader=document.createElement('script');loader.src=buildUrl+'/WebGL.loader.js';loader.onload=()=>createUnityInstance(canvas,config,p=>{document.getElementById('bar').style.width=(p*100)+'%';document.getElementById('progress').textContent=p<.9?'正在布置小院…… '+Math.round(p*100)+'%':'小人们正在藏好……'}).then(instance=>{window.findGuysInstance=instance;if(matchMedia('(pointer:coarse)').matches)instance.SendMessage('Player orbit camera','EnableBrowserTouch','');document.getElementById('loading').style.display='none';canvas.focus();document.getElementById('full').onclick=()=>instance.SetFullscreen(1)}).catch(showError);loader.onerror=()=>showError('无法读取游戏文件，请通过 HTTP 服务访问此页面。');document.body.appendChild(loader);
+let loader=document.createElement('script');loader.src=buildUrl+'/WebGL.loader.js'+assetVersion;loader.onload=()=>createUnityInstance(canvas,config,p=>{document.getElementById('bar').style.width=(p*100)+'%';document.getElementById('progress').textContent=p<.9?'正在布置小院…… '+Math.round(p*100)+'%':'小人们正在藏好……'}).then(instance=>{window.findGuysInstance=instance;if(matchMedia('(pointer:coarse)').matches)instance.SendMessage('Player orbit camera','EnableBrowserTouch','');document.getElementById('loading').style.display='none';canvas.focus();document.getElementById('full').onclick=()=>instance.SetFullscreen(1)}).catch(showError);loader.onerror=()=>showError('无法读取游戏文件，请通过 HTTP 服务访问此页面。');document.body.appendChild(loader);
 </script>
 </body>
 </html>
