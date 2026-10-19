@@ -1,12 +1,12 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <title>变色小人 · 午后小院 | Find Guys</title>
   <style>
     *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#93afa6;font-family:system-ui,'Microsoft YaHei',sans-serif;color:#304b47}
-    #game{width:100%;height:100%;position:relative}canvas{width:100%;height:100%;display:block;outline:none;touch-action:none}
+    #game{width:100%;height:100%;height:100dvh;position:relative;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}canvas{width:100%;height:100%;display:block;outline:none;touch-action:none}body{overscroll-behavior:none;touch-action:none}#full{z-index:2} @media(pointer:coarse){#full{display:none}}
     #loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#f7edda;z-index:3}
     .bean{width:42px;height:53px;border-radius:48% 48% 38% 38%;background:#77ae97;position:relative;margin-bottom:26px;animation:bob 1.8s ease-in-out infinite}
     .bean:before,.bean:after{content:'';position:absolute;bottom:-12px;width:14px;height:23px;background:#77ae97;border-radius:9px}.bean:before{left:3px}.bean:after{right:3px}
@@ -21,10 +21,30 @@
 <button id="full" title="全屏">全屏 ↗</button></div>
 <script>
 const canvas=document.getElementById('unity-canvas');
+// Browser-owned gestures avoid Unity WebGL's mouse emulation losing the second finger.
+const gestureState=window.findGuysTouch={pinches:0,drags:0,taps:0,scale:1};
+let previousDistance=0,lastTouch=null,startTouch=null,gestureMoved=false,multiTouch=false,sceneGesture=false;
+const sendGesture=(kind,x,y=0)=>window.findGuysInstance?.SendMessage('Player orbit camera','BrowserGesture',`${kind},${x},${y}`);
+function point(t){const r=canvas.getBoundingClientRect();return{x:(t.clientX-r.left)/r.width,y:(t.clientY-r.top)/r.height};}
+function scenePoint(p){const r=canvas.getBoundingClientRect();const s=Math.min(r.width/640,r.height/360);return p.y*r.height>60*s&&p.y*r.height<r.height-65*s;}
+canvas.addEventListener('touchstart',e=>{
+ window.findGuysInstance?.SendMessage('Player orbit camera','EnableBrowserTouch','');
+ if(e.touches.length===1){lastTouch=startTouch=point(e.touches[0]);gestureMoved=false;multiTouch=false;sceneGesture=scenePoint(startTouch);}
+ if(e.touches.length>=2){multiTouch=true;gestureMoved=true;previousDistance=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+ e.preventDefault();
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+ if(e.touches.length>=2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(previousDistance>0&&sceneGesture){const ratio=d/previousDistance;sendGesture('pinch',ratio);gestureState.pinches++;gestureState.scale*=ratio;}previousDistance=d;}
+ else if(e.touches.length===1&&!multiTouch&&lastTouch){const p=point(e.touches[0]);if(Math.hypot(p.x-startTouch.x,p.y-startTouch.y)>.008)gestureMoved=true;if(gestureMoved&&sceneGesture){sendGesture('drag',p.x-lastTouch.x,p.y-lastTouch.y);gestureState.drags++;}lastTouch=p;}
+ e.preventDefault();
+},{passive:false});
+canvas.addEventListener('touchend',e=>{if(e.touches.length===0){if(!multiTouch&&!gestureMoved&&lastTouch&&sceneGesture){sendGesture('tap',lastTouch.x,lastTouch.y);gestureState.taps++;}lastTouch=null;previousDistance=0;}e.preventDefault();},{passive:false});
+canvas.addEventListener('touchcancel',()=>{lastTouch=null;previousDistance=0;multiTouch=true;});
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 const buildUrl='Build';
 const config={dataUrl:buildUrl+'/WebGL.data.unityweb',frameworkUrl:buildUrl+'/WebGL.framework.js.unityweb',codeUrl:buildUrl+'/WebGL.wasm.unityweb',streamingAssetsUrl:'StreamingAssets',companyName:'FindGuys',productName:'Petit Jardin',productVersion:'0.1.0',showBanner:(message,type)=>{if(type==='error')showError(message)},devicePixelRatio:Math.min(window.devicePixelRatio||1,1.75)};
 function showError(message){document.getElementById('loading').style.display='flex';let e=document.getElementById('error');e.style.display='block';e.textContent='小院载入遇到了问题。请使用本地服务器打开，并检查浏览器是否启用 WebGL 2。\n'+message;console.error(message)}
-let loader=document.createElement('script');loader.src=buildUrl+'/WebGL.loader.js';loader.onload=()=>createUnityInstance(canvas,config,p=>{document.getElementById('bar').style.width=(p*100)+'%';document.getElementById('progress').textContent=p<.9?'正在布置小院…… '+Math.round(p*100)+'%':'小人们正在藏好……'}).then(instance=>{window.findGuysInstance=instance;document.getElementById('loading').style.display='none';canvas.focus();document.getElementById('full').onclick=()=>instance.SetFullscreen(1)}).catch(showError);loader.onerror=()=>showError('无法读取游戏文件，请通过 HTTP 服务访问此页面。');document.body.appendChild(loader);
+let loader=document.createElement('script');loader.src=buildUrl+'/WebGL.loader.js';loader.onload=()=>createUnityInstance(canvas,config,p=>{document.getElementById('bar').style.width=(p*100)+'%';document.getElementById('progress').textContent=p<.9?'正在布置小院…… '+Math.round(p*100)+'%':'小人们正在藏好……'}).then(instance=>{window.findGuysInstance=instance;if(matchMedia('(pointer:coarse)').matches)instance.SendMessage('Player orbit camera','EnableBrowserTouch','');document.getElementById('loading').style.display='none';canvas.focus();document.getElementById('full').onclick=()=>instance.SetFullscreen(1)}).catch(showError);loader.onerror=()=>showError('无法读取游戏文件，请通过 HTTP 服务访问此页面。');document.body.appendChild(loader);
 </script>
 </body>
 </html>
