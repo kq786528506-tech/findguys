@@ -7,7 +7,7 @@ A mobile portrait hidden-character game built with TypeScript, HTML, CSS and Can
 Play online: **https://kq786528506-tech.github.io/findguys/**
 
 
-Double-click `Play-FindGuys.cmd`, or open `dist/FindGuys.html` in Chrome, Edge or Safari. This standalone file embeds its illustrations, fonts and game code and runs offline. No installation or server is needed.
+Double-click `Play-FindGuys.cmd`, or open `docs/FindGuys.html` from a repository download. After a local build, `dist/FindGuys.html` is also available. The game is tested in Chrome. This standalone file embeds its illustrations, fonts and game code and runs offline. No installation or server is needed.
 
 For a local development preview:
 
