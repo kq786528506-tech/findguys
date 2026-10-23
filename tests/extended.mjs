@@ -1,0 +1,23 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
+import {writeFile} from 'node:fs/promises';
+const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const checks=[],errors=[];
+const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+page.on('pageerror',e=>errors.push(e.message));
+await page.clock.install();
+await page.goto(process.env.TEST_ORIGIN||'http://localhost:5173');await page.waitForFunction(()=>window.__findGuys&&!window.__findGuys.getState().loading);
+await page.locator('[data-action="challenge"]').click();await page.locator('[data-action="start-challenge"]').click();await page.waitForFunction(()=>!window.__findGuys.getState().loading&&window.__findGuys.getState().timed);
+await page.clock.runFor(1100);assert.equal(await page.locator('#timer-label').innerText(),'1:59');checks.push('Challenge starts at 120 seconds and displays minute boundary correctly');
+await page.locator('[data-action="pause"]').click();const frozen=await page.evaluate(()=>window.__findGuys.getState().remaining);await page.clock.runFor(5000);assert.equal(await page.evaluate(()=>window.__findGuys.getState().remaining),frozen);await page.locator('[data-action="resume"]').first().click();checks.push('Challenge countdown freezes while paused');
+await page.clock.runFor(36000);let s=await page.evaluate(()=>window.__findGuys.getState());assert.equal(s.weather,1);checks.push('Weather changes automatically during active play');
+await page.clock.runFor(31000);s=await page.evaluate(()=>window.__findGuys.getState());assert.equal(s.phase,1);checks.push('Time of day changes automatically during active play');
+await page.clock.runFor(53000);s=await page.evaluate(()=>window.__findGuys.getState());assert.equal(s.remaining,0);assert.ok(s.modalOpen);assert.ok(await page.getByText('No need to rush.').isVisible());await page.locator('[data-action="free-play"]').click();assert.equal(await page.locator('#timer-label').innerText(),'FREE PLAY');checks.push('Time-up offers functional unlimited continuation');
+await page.screenshot({path:'test-results/challenge-freeplay.png'});
+// Every byte needed to play is embedded in the standalone file.
+const offline=await browser.newContext({viewport:{width:390,height:844},offline:true});const standalone=await offline.newPage();standalone.on('pageerror',e=>errors.push(e.message));const external=[];standalone.on('request',r=>{if(/^https?:/.test(r.url()))external.push(r.url())});
+await standalone.goto(pathToFileURL(resolve('dist/FindGuys.html')).href);await standalone.waitForFunction(()=>window.__findGuys&&!window.__findGuys.getState().loading);await standalone.locator('[data-action="scenes"]').click();assert.equal(await standalone.locator('.world-card').count(),4);await standalone.locator('[data-level="3"]').click();await standalone.waitForFunction(()=>!window.__findGuys.getState().loading&&window.__findGuys.getState().level==='moon');assert.equal(external.length,0);checks.push('Standalone HTML starts and switches scenes offline with zero external requests');await standalone.screenshot({path:'test-results/offline-moon.png'});
+assert.equal(errors.length,0,errors.join('\n'));
+console.log(JSON.stringify({checks,errors},null,2));await writeFile('test-results/extended-verification.json',JSON.stringify({checks,errors},null,2));await browser.close();

@@ -1,0 +1,10 @@
+﻿import {chromium} from '@playwright/test';
+const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+page.on('pageerror',e=>console.log('PAGE ERROR',e.message));
+await page.goto('http://localhost:5173');
+await page.waitForFunction(()=>window.__findGuys&&!window.__findGuys.getState().loading);
+await page.waitForTimeout(1200);
+await page.screenshot({path:'test-results/initial.png'});
+console.log(await page.evaluate(()=>({state:window.__findGuys.getState(),sizes:{game:document.querySelector('#game').getBoundingClientRect().toJSON(),scene:document.querySelector('#scene').getBoundingClientRect().toJSON()}})));
+await browser.close();

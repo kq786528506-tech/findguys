@@ -1,0 +1,9 @@
+node_modules/
+dist/
+art-source/*.png
+art-source/*.jpg
+test-results/
+*.log
+
+release/
+.deployment/

@@ -1,0 +1,10 @@
+﻿import {chromium} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+import {resolve,sep,extname} from 'node:path';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const root=resolve('docs');
+await page.route('https://static-preview.test/**',async route=>{const url=new URL(route.request().url());let path=decodeURIComponent(url.pathname);if(!path.startsWith('/findguys/'))return route.abort();path=path.slice('/findguys/'.length)||'index.html';const target=resolve(root,path);if(!target.startsWith(root+sep))return route.abort();try{const body=await readFile(target);const type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.ttf':'font/ttf'}[extname(target)]||'text/plain';await route.fulfill({status:200,contentType:type,body})}catch{await route.fulfill({status:404,body:'Missing file'})}});
+await page.goto('https://static-preview.test/findguys/');await page.waitForFunction(()=>window.__findGuys&&!window.__findGuys.getState().loading);await page.locator('[data-action="scenes"]').click();await page.locator('[data-level="2"]').click();await page.waitForFunction(()=>!window.__findGuys.getState().loading&&window.__findGuys.getState().level==='market');assert.equal(errors.length,0);console.log('GitHub Pages subpath preview passed: illustration, fonts, JavaScript and scene switching.');await browser.close();

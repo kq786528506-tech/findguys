@@ -1,0 +1,18 @@
+{
+  "name": "find-guys-storybook",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "tsc --noEmit && vite build && node scripts/pack.mjs",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "test": "node tests/run.mjs",
+    "build:pages": "npm run build && node scripts/prepare-pages.mjs"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "typescript": "^5.9.0",
+    "@playwright/test": "^1.56.0"
+  }
+}

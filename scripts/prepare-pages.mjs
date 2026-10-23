@@ -1,0 +1,11 @@
+﻿import {cp,mkdir,rm,writeFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {dirname,basename,resolve} from 'node:path';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const docs=resolve(root,'docs');
+if(dirname(docs)!==resolve(root)||basename(docs)!=='docs')throw new Error('Invalid Pages output path');
+await rm(docs,{recursive:true,force:true});
+await mkdir(docs,{recursive:true});
+await cp(new URL('../dist/',import.meta.url),docs,{recursive:true});
+await writeFile(new URL('../docs/.nojekyll',import.meta.url),'');
+console.log('GitHub Pages static site prepared in docs/');
